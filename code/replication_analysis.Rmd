@@ -1,0 +1,338 @@
+---
+title: "Replication paper"
+author: "Jeff Leek"
+date: "August 31, 2015"
+output: html_document
+---
+
+### Load packages you need
+
+```{r load_packages,message=FALSE}
+library(dplyr)
+library(RCurl)
+library(grid)
+library(ggplot2)
+library(downloader)
+library(gridExtra)
+library(extrafont)
+```
+
+### Download the data 
+
+We follow the data reading approach given in the code reproducing the paper.
+
+```{r download_data,message=FALSE,warning=FALSE}
+download("https://osf.io/fgjvw/?action=download",destfile="../data/rpp_data.csv")
+download("https://osf.io/bhcsf/?action=download",destfile="../data/rpp_data_codebook.csv")
+date_downloaded = date()
+date()
+```
+
+
+### Reproducing Figure 3 from the paper
+ 
+First we download the data following the lines [30-43](https://github.com/CenterForOpenScience/rpp/blob/c15f3f0bae1353bb2e949163f8c864af6e1f4123/RPP_figures.R#L30-L46) of the original code and updating because we had trouble getting the functions to work from OSF. 
+
+```{r read_data,message=FALSE,warning=FALSE}
+
+## Here we follow 
+
+dat = read.csv("../data/rpp_data.csv",stringsAsFactors=F)
+fdat = dplyr::filter(dat, !is.na(T_pval_USE..O.), !is.na(T_pval_USE..R.))
+
+## 99 expected
+nrow(fdat)
+
+
+idOK <- complete.cases(fdat$T_r..O.,fdat$T_r..R.)
+
+## 97 expected
+sum(idOK)
+```
+
+
+Next make the plot following lines [192-250](https://github.com/CenterForOpenScience/rpp/blob/c15f3f0bae1353bb2e949163f8c864af6e1f4123/RPP_figures.R#L192-L250) of the original code and updating because we had trouble getting the functions to work from OSF
+
+
+```{r reproduce_plot,message=FALSE,warning=FALSE}
+
+## Got this from https://github.com/FredHasselman/toolboxR/blob/master/C-3PR.R was having trouble with the
+## sourcing
+
+source("utils.R")
+mytheme <- gg.theme("clean")
+
+## Line 149 needed to make numeric
+fdat$Power..R. <- as.numeric(fdat$Power..R.)
+
+fdat$oriSig = "Not Significant"
+fdat$oriSig[fdat$T_pval_USE..O.<=.06] = "Significant"
+fdat$oriSig = factor(fdat$oriSig)
+
+fdat$repSig = "Not Significant"
+fdat$repSig[fdat$T_pval_USE..R.<=.05] = "Significant"
+fdat$repSig = factor(fdat$repSig)
+
+blankPlot <- plotHolder()
+
+
+xDense <- ggplot(fdat, aes(x=T_r..O., fill=oriSig)) + 
+  geom_density(aes(y= ..count..),trim=F,alpha=.5) + 
+  xlab("") + ylab("") + xlim(0,1) +
+  gg.theme("noax") + 
+  theme(legend.position = "none",plot.margin = unit(c(0,0,0,4), "lines"))
+
+
+yDense <- ggplot(fdat, aes(x=T_r..R., fill=repSig)) + 
+  geom_density(aes(y= ..count..),trim=F,alpha=.5) + 
+  xlab("") + ylab("") + xlim(-.5,1) + 
+  coord_flip() + 
+  gg.theme("noax") + 
+  theme(legend.position = "none", plot.margin = unit(c(0,0,3,0), "lines")) 
+
+
+scatterP<-
+  ggplot(fdat,aes(x=T_r..O.,y=T_r..R.)) +  
+  geom_hline(aes(yintercept=0),linetype=2) +
+  geom_abline(intercept=0,slope=1,color="Grey60")+
+  geom_point(aes(size=Power..R.,fill=repSig),color="Grey30",shape=21,alpha=.8) + 
+  geom_rug(aes(color=oriSig),size=1,sides="b",alpha=.6) + 
+  geom_rug(aes(color=repSig),size=1,sides="l",alpha=.6) + 
+  scale_x_continuous(name="Original Effect Size",limits=c(0,1),breaks=c(0,.25,.5,.75,1)) + 
+  scale_y_continuous(name="Replication Effect Size",limits=c(-.5,1),breaks=c(-.5,-.25,0,.25,.5,.75,1)) + 
+  ggtitle("") + xlab("") + ylab("") + 
+  scale_size_continuous(name="Replication Power",range=c(2,9)) + 
+  scale_color_discrete(name="p-value") +
+  scale_fill_discrete(name="p-value") +
+  gg.theme("clean") + 
+  theme(legend.position=c(.9,.6), plot.margin = unit(c(-2,-1.5,2,2), "lines")) 
+
+grid.arrange(xDense, blankPlot, scatterP, yDense, ncol=2, nrow=2, widths=c(4, 1.4), heights=c(1.4, 4))
+ 
+dim(fdat)
+
+```
+
+
+
+
+### Now we transform to Fisher
+
+We follow the lines [490-516](https://github.com/CenterForOpenScience/rpp/blob/c15f3f0bae1353bb2e949163f8c864af6e1f4123/masterscript.R#L490-L516) to get the Fisher transforms include the degrees of freedom adjustments used by the original authors. 
+
+```{r fisher_transform,message=FALSE,warning=FALSE}
+
+colnames(dat)[1] = "ID"
+
+cor_orig = dat$T_r..O.
+cor_rep = dat$T_r..R.
+
+n_orig = dat$T_df2..O. + 2
+n_rep = dat$T_df2..R. + 2
+
+
+### Partial correlation, so degrees of freedom plus 2 in order to get N
+n_orig[dat$ID == 82] <- dat$T_df1..O.[82]+2
+n_rep[dat$ID == 82] <- dat$T_df1..R.[82]+2
+
+### Correlation
+n_orig[dat$ID == 120] <- dat$T_N..O.[120]
+n_rep[dat$ID == 120] <- dat$T_N..R.[120]
+n_orig[dat$ID == 154] <- dat$T_N..O.[154]
+n_rep[dat$ID == 154] <- dat$T_N..R.[154]
+n_orig[dat$ID == 155] <- dat$T_N..O.[155]
+n_rep[dat$ID == 155] <- dat$T_N..R.[155]
+
+### t
+n_orig[dat$ID == 121] <- dat$T_N..O.[121]
+n_rep[dat$ID == 121] <- dat$T_N..R.[121]
+
+### Transform to Fisher's z
+fish_orig = atanh(cor_orig)
+fish_rep = atanh(cor_rep)
+```
+
+### Calculate the prediction interval
+
+Here we calculate prediction intervals based on Fisher's z-scores. 
+
+```{r prediction_interval,message=FALSE,warning=FALSE}
+se_total <- sqrt(1/(n_orig-3) + 1/(n_rep-3))
+low = tanh(fish_orig - se_total * 1.96)
+high = tanh(fish_orig + se_total * 1.96)
+too_high = (cor_rep > high)
+too_low = (cor_rep < low)
+use_index = (!is.na(dat$T_pval_USE..O.) & !is.na(dat$T_pval_USE..R.))
+
+pi_dat = data.frame(cor_orig, cor_rep, low, high, se_total, too_low, too_high, n_orig, n_rep,val = (too_low+2*too_high+1),use_index)
+
+pi_dat = dplyr::filter(pi_dat, use_index > 0)
+
+```
+
+Here we make a plot. We haven't filtered out the cases where we have more than one degree of freedom for the test yet. 
+
+```{r nofilter_plot,message=FALSE,warning=FALSE}
+pi_dat_nona = pi_dat[rowSums(is.na(pi_dat))==0,]
+cols1 = c("grey","hotpink","dodgerblue")
+plot(pi_dat_nona$cor_orig,pi_dat_nona$cor_rep,ylim=c(-1,1),xlim=c(0,1),
+     xlab="Original Effect",ylab="Replication Effect",col=cols1[pi_dat_nona$val],pch=19)
+abline(c(0,1),lwd=3,lty=2)
+abline(h=0,lwd=3,lty=2)
+segments(pi_dat_nona$cor_orig,pi_dat_nona$low,pi_dat_nona$cor_orig,pi_dat_nona$high,col=cols1[pi_dat_nona$val],lwd=0.75)
+legend(0.55,-0.5,col=c("grey","hotpink","dodgerblue"),pch=19,
+       legend=c("In prediction interval","Below prediction interval","Above prediction interval"))
+```
+
+
+Here we save the plot to a pdf
+
+```{r make_nofilter_pdf,message=FALSE,warning=FALSE}
+font_import(pattern="Lato",prompt=FALSE)
+loadfonts()
+pdf(file = "../results/pi_figure_nofilter.pdf",family="Lato")
+plot(pi_dat_nona$cor_orig,pi_dat_nona$cor_rep,ylim=c(-1,1),xlim=c(0,1),
+     xlab="Original Effect",ylab="Replication Effect",bg=cols1[pi_dat_nona$val], col="darkgrey",
+     pch=21,cex.lab=1.2,cex.axis=1.2,cex=1.2)
+abline(c(0,1),lwd=3)
+abline(h=0,lwd=3,lty=2)
+segments(pi_dat_nona$cor_orig,pi_dat_nona$low,pi_dat_nona$cor_orig,pi_dat_nona$high,col=cols1[pi_dat_nona$val],lwd=0.75)
+legend(0.55,-0.5,pt.bg=c("grey","hotpink","dodgerblue"),col="darkgrey",pch=21,
+       legend=c("In prediction interval","Below prediction interval","Above prediction interval"),cex=1.2)
+dev.off()
+```
+
+
+
+Now plot sample size colored the same way
+
+```{r sample_size_nofilter}
+
+plot(log10(pi_dat_nona$n_orig),log10(pi_dat_nona$n_rep),
+     xlab="Original n",ylab="Replication n",col=cols1[pi_dat_nona$val],pch=19,
+     xaxt="n",yaxt="n")
+axis(1,at=log10(c(1,10,100,500,1000,5000,1e5,2.5e5)),
+     labels = c("1","10","100","500","1000","5000","100,000","250,000"),las=2)
+axis(2,at=log10(c(1,10,100,500,1000,5000,1e5,2.5e5)),
+     labels = c("1","10","100","500","1000","5000","100,000","250,000"),las=2)
+abline(c(0,1),lwd=3)
+
+
+```
+
+
+Save the sample size plot in a pdf
+
+```{r sample_size_nofilter_pdf}
+
+pdf(file = "../results/samplesize_figure_nofilter.pdf",family="Lato")
+plot(log10(pi_dat_nona$n_orig),log10(pi_dat_nona$n_rep),
+     xlab="Original n",ylab="Replication n",col="darkgrey",bg=cols1[pi_dat_nona$val],pch=21,
+     xaxt="n",yaxt="n",cex=1.5)
+axis(1,at=log10(c(1,10,100,500,1000,5000,1e5,2.5e5)),
+     labels = c("1","10","100","500","1000","5000","100,000","250,000"),las=2)
+axis(2,at=log10(c(1,10,100,500,1000,5000,1e5,2.5e5)),
+     labels = c("1","10","100","500","1000","5000","100,000","250,000"),las=2)
+abline(c(0,1),lwd=3)
+dev.off()
+```
+
+
+
+
+### What percentage are in the table in various ways
+
+```{r}
+table(pi_dat_nona$cor_rep < pi_dat_nona$low)
+table(pi_dat_nona$cor_rep < pi_dat_nona$high)
+```
+
+
+### Now lets do the same thing, but filtering as in the paper
+
+```{r}
+pi_dat = cbind(pi_dat,stat=as.character(fdat$T_Test.Statistic..R.),df1 = fdat$T_df1..O.)
+pi_dat = mutate(pi_dat, stat_index= (stat == "F" & df1 == 1) | stat == "t" | stat == "r")
+pi_dat_filt = filter(pi_dat,stat_index > 0)
+```
+
+
+### Now we make the plot after filtering
+
+```{r filter_plot,message=FALSE,warning=FALSE}
+cols1 = c("grey","hotpink","dodgerblue")
+plot(pi_dat_filt$cor_orig,pi_dat_filt$cor_rep,ylim=c(-1,1),xlim=c(0,1),
+     xlab="Original Effect",ylab="Replication Effect",col=cols1[pi_dat_filt$val],pch=19)
+abline(c(0,1),lwd=3,lty=2)
+abline(h=0,lwd=3,lty=2)
+segments(pi_dat_filt$cor_orig,pi_dat_filt$low,pi_dat_filt$cor_orig,pi_dat_filt$high,col=cols1[pi_dat_filt$val],lwd=0.75)
+legend(0.55,-0.5,col=c("grey","hotpink","dodgerblue"),pch=19,
+       legend=c("In prediction interval","Below prediction interval","Above prediction interval"))
+```
+
+
+Here we save the plot to a pdf
+
+```{r make_filter_pdf,message=FALSE,warning=FALSE}
+pdf(file = "../results/pi_figure_filter.pdf",family="Lato")
+plot(pi_dat_filt$cor_orig,pi_dat_filt$cor_rep,ylim=c(-1,1),xlim=c(0,1),
+     xlab="Original Effect",ylab="Replication Effect",bg=cols1[pi_dat_filt$val], col="darkgrey",
+     pch=21,cex.lab=1.2,cex.axis=1.2,cex=1.2)
+abline(c(0,1),lwd=3)
+abline(h=0,lwd=3,lty=2)
+segments(pi_dat_filt$cor_orig,pi_dat_filt$low,pi_dat_filt$cor_orig,pi_dat_filt$high,col=cols1[pi_dat_filt$val],lwd=0.75)
+legend(0.55,-0.5,pt.bg=c("grey","hotpink","dodgerblue"),col="darkgrey",pch=21,
+       legend=c("In prediction interval","Below prediction interval","Above prediction interval"),cex=1.2)
+dev.off()
+```
+
+
+
+
+
+Now plot sample size colored the same way
+
+```{r sample_size_filter}
+
+plot(log10(pi_dat_filt$n_orig),log10(pi_dat_filt$n_rep),
+     xlab="Original n",ylab="Replication n",col=cols1[pi_dat_filt$val],pch=19,
+     xaxt="n",yaxt="n")
+axis(1,at=log10(c(1,10,100,500,1000,5000,1e5,2.5e5)),
+     labels = c("1","10","100","500","1000","5000","100,000","250,000"),las=2)
+axis(2,at=log10(c(1,10,100,500,1000,5000,1e5,2.5e5)),
+     labels = c("1","10","100","500","1000","5000","100,000","250,000"),las=2)
+abline(c(0,1),lwd=3)
+
+
+```
+
+
+Save the sample size plot in a pdf
+
+```{r sample_size_filter_pdf}
+pdf(file = "../results/samplesize_figure_filter.pdf",family="Lato")
+plot(log10(pi_dat_filt$n_orig),log10(pi_dat_filt$n_rep),
+     xlab="Original n",ylab="Replication n",col="darkgrey",bg=cols1[pi_dat_filt$val],pch=21,
+     xaxt="n",yaxt="n",cex=1.5)
+axis(1,at=log10(c(1,10,100,500,1000,5000,1e5,2.5e5)),
+     labels = c("1","10","100","500","1000","5000","100,000","250,000"),las=2)
+axis(2,at=log10(c(1,10,100,500,1000,5000,1e5,2.5e5)),
+     labels = c("1","10","100","500","1000","5000","100,000","250,000"),las=2)
+abline(c(0,1),lwd=3)
+legend(log10(9),log10(2000),pt.bg=c("grey","hotpink","dodgerblue"),col="darkgrey",pch=21,
+       legend=c("In prediction interval","Below prediction interval","Above prediction interval"),cex=1.2)
+dev.off()
+```
+
+
+
+
+
+### What percentage are in the table in various ways
+
+```{r}
+table(pi_dat_filt$cor_rep < pi_dat_filt$low)
+table(pi_dat_filt$cor_rep < pi_dat_filt$high)
+```
+
+
