@@ -1,3 +1,14 @@
+---
+title: "Reports of the '36% value' in the media"
+author: "Prasad Patil"
+date: "September 11, 2015"
+output: html_document
+---
+
+### How has the main finding of "36% replication" been reported in the media?
+We wanted to determine how pervasive the narrative of 36% replication, as reported in "Estimating the reproducibility of psychological science", was.
+The following links discuss the findings of this article, and most discuss the bleak state of science as a result of only 36% of psychology studies being replicated.
+
 http://www.independent.co.uk/news/science/study-reveals-that-a-lot-of-psychology-research-really-is-just-psychobabble-10474646.html
 http://www.theatlantic.com/health/archive/2015/08/psychology-studies-reliability-reproducability-nosek/402466/
 http://www.theatlantic.com/notes/2015/09/sweeping-psychologys-problems-under-the-rug/403726/
@@ -20,6 +31,6 @@ http://io9.com/if-only-one-third-of-published-psychology-research-is-r-172955645
 http://www.theguardian.com/science/2015/aug/27/study-delivers-bleak-verdict-on-validity-of-psychology-experiment-results
 http://www.chinapost.com.tw/life/science-&-technology/2015/08/29/444514/Psychology-research.htm
 
-Different takes:
+Here are a couple different takes on the article's findings:
 http://theconversation.com/real-crisis-in-psychology-isnt-that-studies-dont-replicate-but-that-we-usually-dont-even-try-47249
 http://www.nytimes.com/2015/09/01/opinion/psychology-is-not-in-crisis.html?
