@@ -280,7 +280,7 @@ plot(pi_dat_filt$cor_orig,pi_dat_filt$cor_rep,ylim=c(-1,1),xlim=c(0,1),
      pch=21,cex.lab=1.2,cex.axis=1.2,cex=1.2)
 abline(c(0,1),lwd=3)
 abline(h=0,lwd=3,lty=2)
-segments(pi_dat_filt$cor_orig,pi_dat_filt$low,pi_dat_filt$cor_orig,pi_dat_filt$high,col=cols1[pi_dat_filt$val],lwd=0.75)
+segments(pi_dat_filt$cor_orig,pi_dat_filt$low,pi_dat_filt$cor_orig,pi_dat_filt$high,col=cols1[pi_dat_filt$val],lwd=1)
 legend(0.55,-0.5,pt.bg=c("grey","hotpink","dodgerblue"),col="darkgrey",pch=21,
        legend=c("In prediction interval","Below prediction interval","Above prediction interval"),cex=1.2)
 dev.off()
@@ -371,20 +371,22 @@ get_ps <- function(cor_orig, cor_rep, n_orig, n_rep){
 
 p.vals <- mapply(get_ps, pi_dat_filt$cor_orig, pi_dat_filt$cor_rep, pi_dat_filt$n_orig, pi_dat_filt$n_rep, SIMPLIFY=TRUE)
 
-# Code to make figures (assumes output is just # p vals < 0.05
-
+# These are the number of times P < 0.05 for each study
 p_sums <- apply(p.vals, 2, function(x){sum(x < 0.05)})
 
-df <- data.frame("cor_orig"=pi_dat_filt$cor_orig, "cor_rep"=pi_dat_filt$cor_rep, "psums"=p_sums)
+summary(p_sums)
 
-colfunc <- colorRampPalette(c("darkorange1", "purple3"))
-cols <- colfunc(100)
+# Code to make figures (assumes output is just # p vals < 0.05
+#df <- data.frame("cor_orig"=pi_dat_filt$cor_orig, "cor_rep"=pi_dat_filt$cor_rep, "psums"=p_sums)
+
+#colfunc <- colorRampPalette(c("darkorange1", "purple3"))
+#cols <- colfunc(100)
 
 #layout(matrix(1:2,ncol=2), width = c(3,1))
 
-plot(df$cor_orig, df$cor_rep, col=cols[df$psums], pch=19, cex=2, xlim=c(0,1), ylim=c(-0.5, 1), main="Effect sizes colored by # P < 0.05 (out of 100 replicates)", xlab="Original Effect Size", ylab="Replication Effect Size")
-abline(0,1)
-abline(h=0, lty="dashed")
+#plot(df$cor_orig, df$cor_rep, col=cols[df$psums], pch=19, cex=2, xlim=c(0,1), ylim=c(-0.5, 1), main="Effect sizes colored by # P < 0.05 (out of 100 replicates)", xlab="Original Effect Size", ylab="Replication Effect Size")
+#abline(0,1)
+#abline(h=0, lty="dashed")
 
 #legend_image <- as.raster(matrix(rev(cols), ncol=1))
 #plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main = '# P<0.05')
@@ -403,14 +405,14 @@ abline(h=0, lty="dashed")
 #dev.off()
 
 # Can use this to make a violin plot of any iteration you want (out of 100)
-make_viol <- function(p.vals, orig_vals, num){
-	p <- p.vals[num,]
-	df2 <- data.frame("p"=c(orig_vals, p), "cat" = rep(c("Original Studies", "Replication"), c(length(orig_vals), length(p))))
-	t <- ggplot(df2, aes(cat, p))
-	t + geom_violin()
-}
+#make_viol <- function(p.vals, orig_vals, num){
+#	p <- p.vals[num,]
+#	df2 <- data.frame("p"=c(orig_vals, p), "cat" = rep(c("Original Studies", "Replication"), c(length(orig_vals), length(p))))
+#	t <- ggplot(df2, aes(cat, p))
+#	t + geom_violin()
+#}
 
-pdf(file = "../results/violin_plot.pdf",family="Lato")
-make_viol(p.vals, dat$T_pval..O, 12)
-dev.off()
+#pdf(file = "../results/violin_plot.pdf",family="Lato")
+#make_viol(p.vals, dat$T_pval..O, 12)
+#dev.off()
 ```
