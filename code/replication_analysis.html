@@ -87,7 +87,7 @@ library(Hmisc)</code></pre>
 download(&quot;https://osf.io/bhcsf/?action=download&quot;,destfile=&quot;../data/rpp_data_codebook.csv&quot;)
 date_downloaded = date()
 date()</code></pre>
-<pre><code>## [1] &quot;Thu Sep 17 14:10:26 2015&quot;</code></pre>
+<pre><code>## [1] &quot;Thu Sep 17 14:33:12 2015&quot;</code></pre>
 </div>
 <div id="reproducing-figure-3-from-the-paper" class="section level3">
 <h3>Reproducing Figure 3 from the paper</h3>
@@ -388,8 +388,8 @@ plot(df$cor_orig, df$cor_rep, col=cols[df$psums], pch=19, cex=2, xlim=c(0,1), yl
 abline(0,1)
 abline(h=0, lty=&quot;dashed&quot;)
 
-legend(0.65,-0.25,col=cols[seq(0,100,by=20)],pch=19,cex=1.5,
-       legend=c(&quot;0%&quot;,&quot;20%&quot;,&quot;40%&quot;,&quot;60%&quot;,&quot;80%&quot;,&quot;100%&quot;))
+legend(0.65,0,col=cols[seq(0,100,by=20)],pch=19,cex=1.5,
+       legend=c(&quot;0%&quot;,&quot;20%&quot;,&quot;40%&quot;,&quot;60%&quot;,&quot;80%&quot;,&quot;100%&quot;),title=&quot;% Rep. P &lt; 0.05&quot;)
 dev.off()</code></pre>
 <pre><code>## quartz_off_screen 
 ##                 2</code></pre>
