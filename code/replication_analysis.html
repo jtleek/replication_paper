@@ -77,7 +77,8 @@ library(grid)
 library(ggplot2)
 library(downloader)
 library(gridExtra)
-library(extrafont)</code></pre>
+library(extrafont)
+library(Hmisc)</code></pre>
 </div>
 <div id="download-the-data" class="section level3">
 <h3>Download the data</h3>
@@ -86,7 +87,7 @@ library(extrafont)</code></pre>
 download(&quot;https://osf.io/bhcsf/?action=download&quot;,destfile=&quot;../data/rpp_data_codebook.csv&quot;)
 date_downloaded = date()
 date()</code></pre>
-<pre><code>## [1] &quot;Tue Sep 15 12:53:19 2015&quot;</code></pre>
+<pre><code>## [1] &quot;Thu Sep 17 14:10:26 2015&quot;</code></pre>
 </div>
 <div id="reproducing-figure-3-from-the-paper" class="section level3">
 <h3>Reproducing Figure 3 from the paper</h3>
@@ -223,7 +224,7 @@ loadfonts()
 pdf(file = &quot;../results/pi_figure_nofilter.pdf&quot;,family=&quot;Lato&quot;)
 plot(pi_dat_nona$cor_orig,pi_dat_nona$cor_rep,ylim=c(-1,1),xlim=c(0,1),
      xlab=&quot;Original Effect&quot;,ylab=&quot;Replication Effect&quot;,bg=cols1[pi_dat_nona$val], col=&quot;darkgrey&quot;,
-     pch=21,cex.lab=1.2,cex.axis=1.2,cex=1.2)
+     pch=21,cex.lab=1.2,cex.axis=1.2,cex=1.5)
 abline(c(0,1),lwd=3)
 abline(h=0,lwd=3,lty=2)
 segments(pi_dat_nona$cor_orig,pi_dat_nona$low,pi_dat_nona$cor_orig,pi_dat_nona$high,col=cols1[pi_dat_nona$val],lwd=0.75)
@@ -336,10 +337,8 @@ dev.off()</code></pre>
 </div>
 <div id="p-value-simulationhow-often-should-the-p-values-agree" class="section level3">
 <h3>P-value simulation…how often should the p-values agree?</h3>
-<pre class="r"><code># Assume cor_orig == rho
-# Assume all statistics are F(1, df2)
-
-get_ps &lt;- function(cor_orig, cor_rep, n_orig, n_rep){
+<pre class="r"><code>set.seed(35353)
+get_ps &lt;- function(cor_orig, cor_rep, n_orig, n_rep,nproject){
     # If we don't have a sample size for the replicate, use the sample size
     # of the original study. If that is also NA, use the median original sample
     # size.
@@ -352,7 +351,7 @@ get_ps &lt;- function(cor_orig, cor_rep, n_orig, n_rep){
 
     # Simulate 100 arcanh(r) assuming the original association is the true
     # one, but using the sample size of the replication study to compute the SD
-    new_arc_rs &lt;- rnorm(100, mean_term, 1/sqrt(n_rep_tmp - 3))
+    new_arc_rs &lt;- rnorm(nproject, mean_term, 1/sqrt(n_rep_tmp - 3))
 
     # Convert to R^2
     new_r2 &lt;- tanh(new_arc_rs)^2
@@ -366,53 +365,34 @@ get_ps &lt;- function(cor_orig, cor_rep, n_orig, n_rep){
 
 #tmp &lt;- get_ps(fish_orig[1], fish_rep[1], n_orig[1], n_rep[1])
 
-p.vals &lt;- mapply(get_ps, pi_dat_filt$cor_orig, pi_dat_filt$cor_rep, pi_dat_filt$n_orig, pi_dat_filt$n_rep, SIMPLIFY=TRUE)
+p.vals &lt;- mapply(get_ps, pi_dat_filt$cor_orig, pi_dat_filt$cor_rep, pi_dat_filt$n_orig, pi_dat_filt$n_rep, nproject=100, SIMPLIFY=TRUE)
 
 # These are the number of times P &lt; 0.05 for each study
-p_sums &lt;- apply(p.vals, 2, function(x){sum(x &lt; 0.05)})
+p_means &lt;- apply(p.vals, 1, function(x){mean(x &lt; 0.05)})
 
-summary(p_sums)</code></pre>
+summary(p_means)</code></pre>
 <pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-##    4.00   70.00   84.00   78.45   92.00  100.00</code></pre>
-<pre class="r"><code># Code to make figures (assumes output is just # p vals &lt; 0.05
-#df &lt;- data.frame(&quot;cor_orig&quot;=pi_dat_filt$cor_orig, &quot;cor_rep&quot;=pi_dat_filt$cor_rep, &quot;psums&quot;=p_sums)
+##  0.6575  0.7637  0.7945  0.7901  0.8116  0.8904</code></pre>
+<pre class="r"><code># Make the plot for the studies
 
-#colfunc &lt;- colorRampPalette(c(&quot;darkorange1&quot;, &quot;purple3&quot;))
-#cols &lt;- colfunc(100)
+p_per_study &lt;- apply(p.vals, 2, function(x){sum(x &lt; 0.05)})
 
-#layout(matrix(1:2,ncol=2), width = c(3,1))
+pdf(file = &quot;../results/pval-replication.pdf&quot;,family=&quot;Lato&quot;)
+# Code to make figures (assumes output is just # p vals &lt; 0.05
+df &lt;- data.frame(&quot;cor_orig&quot;=pi_dat_filt$cor_orig, &quot;cor_rep&quot;=pi_dat_filt$cor_rep, &quot;psums&quot;= p_per_study)
 
-#plot(df$cor_orig, df$cor_rep, col=cols[df$psums], pch=19, cex=2, xlim=c(0,1), ylim=c(-0.5, 1), main=&quot;Effect sizes colored by # P &lt; 0.05 (out of 100 replicates)&quot;, xlab=&quot;Original Effect Size&quot;, ylab=&quot;Replication Effect Size&quot;)
-#abline(0,1)
-#abline(h=0, lty=&quot;dashed&quot;)
+colfunc &lt;- colorRampPalette(c(&quot;darkorange1&quot;, &quot;purple3&quot;))
+cols &lt;- colfunc(100)
 
-#legend_image &lt;- as.raster(matrix(rev(cols), ncol=1))
-#plot(c(0,2),c(0,1),type = 'n', axes = F,xlab = '', ylab = '', main = '# P&lt;0.05')
-#text(x=1.5, y = seq(0,1,l=5), labels = seq(0,100,l=5))
-#rasterImage(legend_image, 0, 0, 1,1)
+plot(df$cor_orig, df$cor_rep, col=cols[df$psums], pch=19, cex=2, xlim=c(0,1), ylim=c(-1, 1), main=&quot;Effect sizes colored by fraction of P &lt; 0.05 in replication&quot;, xlab=&quot;Original Effect Size&quot;, ylab=&quot;Replication Effect Size&quot;)
+abline(0,1)
+abline(h=0, lty=&quot;dashed&quot;)
 
-## ggplot code for the same thing (&quot;q&quot; is the loess plot)
-#p &lt;- ggplot(df, aes(cor_orig, cor_rep))
-#p &lt;- p + scale_x_continuous(limits=c(0,1)) + scale_y_continuous(limits=c(-0.5, 1)) + geom_point(aes(color = psums), shape=19, size=4) + scale_color_gradient(low=&quot;darkorange1&quot;, high=&quot;purple3&quot;, name=&quot;# P &lt; 0.05&quot;) + geom_abline(intercept=0, slope = 1, linetype=2) + geom_abline(intercept=0, slope = 0, linetype=2) + labs(title=&quot;Effect sizes colored by # P &lt; 0.05 (out of 100 replicates)&quot;, x=&quot;&quot;, y = &quot;Replication Effect Size&quot;) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line(color = &quot;black&quot;))
-
-#q &lt;- qplot(data = subset(df,!is.na(df$cor_rep)) , cor_orig, p.vals, xlab = &quot;Original Effect Size&quot;, ylab=&quot;# P &lt; 0.05&quot;)
-#q &lt;- q + geom_smooth(method=&quot;loess&quot;, size=1.5, fill=NA) + scale_x_continuous(limits=c(0,1)) +scale_y_continuous(limits=c(0,100)) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(), axis.line = element_line(color = &quot;black&quot;), plot.margin=unit(c(0,30,0,3), &quot;mm&quot;))
-
-#pdf(file = &quot;../results/pvals.pdf&quot;,family=&quot;Lato&quot;)
-#grid.arrange(p, q, nrow=2, heights=c(3,1))
-#dev.off()
-
-# Can use this to make a violin plot of any iteration you want (out of 100)
-#make_viol &lt;- function(p.vals, orig_vals, num){
-#   p &lt;- p.vals[num,]
-#   df2 &lt;- data.frame(&quot;p&quot;=c(orig_vals, p), &quot;cat&quot; = rep(c(&quot;Original Studies&quot;, &quot;Replication&quot;), c(length(orig_vals), length(p))))
-#   t &lt;- ggplot(df2, aes(cat, p))
-#   t + geom_violin()
-#}
-
-#pdf(file = &quot;../results/violin_plot.pdf&quot;,family=&quot;Lato&quot;)
-#make_viol(p.vals, dat$T_pval..O, 12)
-#dev.off()</code></pre>
+legend(0.65,-0.25,col=cols[seq(0,100,by=20)],pch=19,cex=1.5,
+       legend=c(&quot;0%&quot;,&quot;20%&quot;,&quot;40%&quot;,&quot;60%&quot;,&quot;80%&quot;,&quot;100%&quot;))
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
 </div>
 
 

@@ -1,13 +1,14 @@
 ---
 title: "Reports of the '36% value' in the media"
-author: "Prasad Patil"
+author: "Prasad Patil + Jeff Leek"
 date: "September 11, 2015"
 output: html_document
 ---
 
 ### How has the main finding of "36% replication" been reported in the media?
-We wanted to determine how pervasive the narrative of 36% replication, as reported in "Estimating the reproducibility of psychological science", was.
-The following links discuss the findings of this article, and most discuss the bleak state of science as a result of only 36% of psychology studies being replicated.
+
+These are sources that reported the number 36\% of studies replicated as originally discussed in the paper: ["Estimating the reproducibility of psychological science"](http://www.sciencemag.org/content/349/6251/aac4716)
+The following links discuss the findings of this article, and most discuss problems with science as a result of only 36% of psychology studies being replicated.
 
 * http://www.independent.co.uk/news/science/study-reveals-that-a-lot-of-psychology-research-really-is-just-psychobabble-10474646.html
 * http://www.theatlantic.com/health/archive/2015/08/psychology-studies-reliability-reproducability-nosek/402466/
@@ -31,6 +32,11 @@ The following links discuss the findings of this article, and most discuss the b
 * http://www.theguardian.com/science/2015/aug/27/study-delivers-bleak-verdict-on-validity-of-psychology-experiment-results
 * http://www.chinapost.com.tw/life/science-&-technology/2015/08/29/444514/Psychology-research.htm
 
-Here are a couple different takes on the article's findings:
+Additionally a search of social media sites like Twitter turns up a large number of tweets quoting the 36% figure: 
+
+* https://twitter.com/search?q=36%25%20replicate&src=typd
+
+There have been alternative interpretations, but they are fewer. Here are a couple of prominent examples. 
+
 * http://theconversation.com/real-crisis-in-psychology-isnt-that-studies-dont-replicate-but-that-we-usually-dont-even-try-47249
 * http://www.nytimes.com/2015/09/01/opinion/psychology-is-not-in-crisis.html?
